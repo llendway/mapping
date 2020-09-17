@@ -25,6 +25,7 @@ library(lubridate)     # for date manipulation
 library(palmerpenguins)# for Palmer penguin data
 library(maps)          # for map data
 library(ggmap)         # for mapping points on maps
+library(ggthemes)      # for more themes (including theme_map())
 gs4_deauth()           # To not have to authorize each time you knit.
 theme_set(theme_minimal())
 ```
@@ -52,35 +53,119 @@ The `Starbucks` data, compiled by Danny Kaplan and provided by Alicia Johnson, c
 
 ```{r}
 ggplot(data=Starbucks) +
-  geom_point(aes(x=Longitude, y=Latitude), alpha=0.2)
+  geom_point(aes(x = Longitude, y = Latitude), 
+             alpha = 0.2, 
+             size = .1)
 ```
 
 The point pattern probably looks familiar.  To highlight the geographical nature of this scatterplot, we can superimpose the points on top of a map, using the `ggmap()` function from the `ggmap` library. 
 
 **NOTE**: we used to be able to *easily* bring in Google maps. As of mid-2018, in order to bring those in, you need to have a registered API key. If you want to do that, see `google_key` in the help. Then, see the documentation for `get_map()`. We will bring in other types of maps since Google maps are harder to do now and require you to submit credit card information.
 
-Instead, we bring in a stamen map (there are others you could try, but we'll stick with this). First, let's look at an example. Then, we will talk through the details of the code.
+Instead, we bring in a stamen map (there are others you could try, but we'll stick with this). You can also take a look at stamen maps on their [website](http://maps.stamen.com/#watercolor/12/37.7706/-122.3782). First, let's look at an example. 
 
-```{r}
+```{r starbucks-map}
+# Get the map information
 world <- get_stamenmap(
     bbox = c(left = -180, bottom = -57, right = 179, top = 82.1), 
     maptype = "terrain",
-    zoom = 2
-)
+    zoom = 2)
 
-ggmap(world) +
-  geom_point(data=Starbucks, 
-             aes(x=Longitude,y=Latitude), 
-             alpha=.3, size = .2) 
+# Plot the points on the map
+ggmap(world) + # creates the map "background"
+  geom_point(data = Starbucks, 
+             aes(x = Longitude, y = Latitude), 
+             alpha = .3, 
+             size = .1) +
+  theme_map()
+```
+
+Next, we will walk through the `get_stamenmap()` function arguments. The code below is what was used to get the world map information.
+
+```{r get_stamenmap-code, eval=FALSE}
+get_stamenmap(
+    bbox = c(left = -180, bottom = -57, right = 179, top = 82.1), 
+    maptype = "terrain",
+    zoom = 2)
+```
+
+**`bbox`**
+
+```{r, echo=FALSE}
+decorate_chunk("get_stamenmap-code", eval = FALSE) %>% 
+  flair("bbox = ")
 ```
 
 
+The `bbox` argument tells it the minimum and maximum latitude and longitude points. So, left is the minimum longitude, right is the maximum longitude, bottom is the minimum latitude, and top is the maximum latitude. I found it helpful to go to [openstreetmap](https://www.openstreetmap.org): zoom in on the area of interest, click export, and you will see all the values you need. I had to modify them slightly, which you can do after your initial plot.
+
+**`maptype`**
+
+```{r, echo=FALSE}
+decorate_chunk("get_stamenmap-code", eval = FALSE) %>% 
+  flair("maptype = ")
+```
+
+The `maptype` tells it the style of the map. Check out the different options by looking in the `get_stamenmap` help (type `?get_stamenmap` in the console).
+
+**`zoom`**
+
+```{r, echo=FALSE}
+decorate_chunk("get_stamenmap-code", eval = FALSE) %>% 
+  flair("zoom = ")
+```
+
+When you make a large area, you need to decrease the zoom, otherwise it will take too long to load. So, it's a good idea to start with a small zoom and you can always make it bigger if you want. This might seem counter-intuitive at first. I think of the zoom level as the level of detail. So, smaller numbers show less detail and larger numbers more detail. I often go to the stamanmaps webpage and search for the location I'm mapping. Then, in the URL, you can see the zoom number. For example, this link  is a map of St. Paul: [http://maps.stamen.com/#terrain/12/44.9531/-93.0904](http://maps.stamen.com/#terrain/12/44.9531/-93.0904). Notice the number `12` next to  `/#terrain/`. That means it is zoomed in at 12. 
+
+**`ggmap()`**
+
+We save the the map information from `get_stamenmap()` to a named value and then use it in `ggmap()`:
+
+```{r, echo=FALSE}
+decorate_chunk("starbucks-map", eval = FALSE) %>% 
+  flair("world <-") %>% 
+  flair("world")
+```
+
+The `ggmap()` function will print the "background" map. Think of it as the providing the canvas on which we will plot. This takes the place of our usual `ggplot()`.
+
+```{r}
+ggmap(world)
+```
+
+After that, we can use the `geom_XXX()` functions from `ggplot2` that we are used to in order to put points, lines, etc. on top of the map. But, we need to remember to also provide the data we are using in the `geom_XXX()` function(s) we use since we do not have the `ggplot()` function in which to provide it. 
+
+```{r, echo=FALSE}
+decorate_chunk("starbucks-map", eval = FALSE) %>% 
+  flair("data = Starbucks")
+```
+
+
+**`theme_map()`**
+
+The last thing I did in the code was to add `theme_map()`. This is optional, but I often find it makes it look nice.
+
+```{r, echo=FALSE}
+decorate_chunk("starbucks-map") %>% 
+  flair("theme_map()")
+```
+
+So, the final map as a world map as the background with points plotted on top that show the Starbucks locations. The points are .1 of their usual size and have a transparency level of .3. 
 
 
 
+### Demo video
+
+### Resources
+
+### Your turn!
 
 
 
+## Choropleths
 
 
+### Your turn!
 
+
+## Using `leaflet` to create maps
