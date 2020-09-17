@@ -1,0 +1,68 @@
+---
+title: "Mapping data in R"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    code_download: true
+---
+
+## Setup
+
+Welcome to another tutorial for this class, COMP/STAT 112: *Introduction to Data Science*! It will be similar to the others, includin demo videos and files embedded in this document and practice problems with hints or solutions at the end.
+
+As most of our files do, we start this one with three R code chunks: 1. options, 2. libraries and settings, 3. data. 
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r libraries}
+library(tidyverse)     # for data cleaning and plotting
+library(googlesheets4) # for reading googlesheet data
+library(lubridate)     # for date manipulation
+library(palmerpenguins)# for Palmer penguin data
+library(maps)          # for map data
+library(ggmap)         # for mapping points on maps
+gs4_deauth()           # To not have to authorize each time you knit.
+```
+
+```{r my_libraries, include=FALSE}
+# Lisa needs this, students don't
+library(downloadthis) # for including download buttons for files
+library(flair) # for highlighting code
+```
+
+```{r data}
+# Lisa's garden data
+garden_harvest <- read_sheet("https://docs.google.com/spreadsheets/d/1DekSazCzKqPS2jnGhKue7tLxRU3GVL1oxi-4bEM5IWw/edit?usp=sharing") %>% 
+  mutate(date = ymd(date))
+
+# Seeds/plants (and other garden supply) costs
+supply_costs <- read_sheet("https://docs.google.com/spreadsheets/d/1dPVHwZgR9BxpigbHLnA0U99TtVHHQtUzNB9UR0wvb7o/edit?usp=sharing",
+  col_types = "ccccnn")
+
+# Planting dates and locations
+plant_date_loc <- read_sheet("https://docs.google.com/spreadsheets/d/11YH0NtXQTncQbUse5wOsTtLSKAiNogjUA21jnX5Pnl4/edit?usp=sharing",
+  col_types = "cccnDlc")%>% 
+  mutate(date = ymd(date))
+
+# Palmer penguins
+data("penguins")
+
+# US tuition by state data
+us_avg_tuition <- read_csv("https://www.dropbox.com/s/9e0paradcwvuzll/us_avg_tuition.csv?dl=1") %>% 
+   mutate(across(starts_with("20"), parse_number))
+```
+
+## Learning Goals
+
+After this tutorial, you should be able to do the following:
+
+
+
+## Plotting points on a map
+
+
+
