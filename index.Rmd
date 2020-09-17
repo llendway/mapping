@@ -10,7 +10,7 @@ output:
 
 ## Setup
 
-Welcome to another tutorial for this class, COMP/STAT 112: *Introduction to Data Science*! It will be similar to the others, includin demo videos and files embedded in this document and practice problems with hints or solutions at the end.
+Welcome to another tutorial for this class, COMP/STAT 112: *Introduction to Data Science*! It will be similar to the others, including demo videos and files embedded in this document and practice problems with hints or solutions at the end. There are some new libraries, so be sure to install those first.
 
 As most of our files do, we start this one with three R code chunks: 1. options, 2. libraries and settings, 3. data. 
 
@@ -26,6 +26,7 @@ library(palmerpenguins)# for Palmer penguin data
 library(maps)          # for map data
 library(ggmap)         # for mapping points on maps
 gs4_deauth()           # To not have to authorize each time you knit.
+theme_set(theme_minimal())
 ```
 
 ```{r my_libraries, include=FALSE}
@@ -35,25 +36,8 @@ library(flair) # for highlighting code
 ```
 
 ```{r data}
-# Lisa's garden data
-garden_harvest <- read_sheet("https://docs.google.com/spreadsheets/d/1DekSazCzKqPS2jnGhKue7tLxRU3GVL1oxi-4bEM5IWw/edit?usp=sharing") %>% 
-  mutate(date = ymd(date))
-
-# Seeds/plants (and other garden supply) costs
-supply_costs <- read_sheet("https://docs.google.com/spreadsheets/d/1dPVHwZgR9BxpigbHLnA0U99TtVHHQtUzNB9UR0wvb7o/edit?usp=sharing",
-  col_types = "ccccnn")
-
-# Planting dates and locations
-plant_date_loc <- read_sheet("https://docs.google.com/spreadsheets/d/11YH0NtXQTncQbUse5wOsTtLSKAiNogjUA21jnX5Pnl4/edit?usp=sharing",
-  col_types = "cccnDlc")%>% 
-  mutate(date = ymd(date))
-
-# Palmer penguins
-data("penguins")
-
-# US tuition by state data
-us_avg_tuition <- read_csv("https://www.dropbox.com/s/9e0paradcwvuzll/us_avg_tuition.csv?dl=1") %>% 
-   mutate(across(starts_with("20"), parse_number))
+# Starbucks locations
+Starbucks <- read_csv("https://www.macalester.edu/~ajohns24/Data/Starbucks.csv")
 ```
 
 ## Learning Goals
@@ -63,6 +47,40 @@ After this tutorial, you should be able to do the following:
 
 
 ## Plotting points on a map
+
+The `Starbucks` data, compiled by Danny Kaplan and provided by Alicia Johnson, contains information about every Starbucks in the world at the time the data were collected. It includes the `Latitude` and `Longitude` of each location.  Let's start by using familiar plotting tools
+
+```{r}
+ggplot(data=Starbucks) +
+  geom_point(aes(x=Longitude, y=Latitude), alpha=0.2)
+```
+
+The point pattern probably looks familiar.  To highlight the geographical nature of this scatterplot, we can superimpose the points on top of a map, using the `ggmap()` function from the `ggmap` library. 
+
+**NOTE**: we used to be able to *easily* bring in Google maps. As of mid-2018, in order to bring those in, you need to have a registered API key. If you want to do that, see `google_key` in the help. Then, see the documentation for `get_map()`. We will bring in other types of maps since Google maps are harder to do now and require you to submit credit card information.
+
+Instead, we bring in a stamen map (there are others you could try, but we'll stick with this). First, let's look at an example. Then, we will talk through the details of the code.
+
+```{r}
+world <- get_stamenmap(
+    bbox = c(left = -180, bottom = -57, right = 179, top = 82.1), 
+    maptype = "terrain",
+    zoom = 2
+)
+
+ggmap(world) +
+  geom_point(data=Starbucks, 
+             aes(x=Longitude,y=Latitude), 
+             alpha=.3, size = .2) 
+```
+
+
+
+
+
+
+
+
 
 
 
