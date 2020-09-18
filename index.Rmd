@@ -156,7 +156,39 @@ So, the final map as a world map as the background with points plotted on top th
 
 ### Demo video
 
+With that introduction, you are ready to watch the demo video!
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/2k8O-Y_uiRU" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+[Voicethread: `ggmap` demo](https://voicethread.com/share/15479688/)
+
+```{r, echo=FALSE}
+download_file(
+  path = "04_ggmap_demo_no_code.Rmd",
+  button_label = "Download ggmap demo file (without code)",
+  button_type = "warning",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
+
+```{r, echo=FALSE}
+download_file(
+  path = "04_ggmap_demo.Rmd",
+  button_label = "Download ggmap demo file (with code)",
+  button_type = "info",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
+
+
 ### Resources
+
+* [Examples](https://github.com/dkahle/ggmap) from `ggmap` maintainer David Kahle  
+* [`ggmap` cheatsheet](https://www.nceas.ucsb.edu/sites/default/files/2020-04/ggmapCheatsheet.pdf)
 
 ### Your turn!
 
