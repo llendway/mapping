@@ -153,13 +153,19 @@ decorate_chunk("starbucks-map") %>%
 So, the final map as a world map as the background with points plotted on top that show the Starbucks locations. The points are .1 of their usual size and have a transparency level of .3. 
 
 
-
 ### Demo video
 
 ### Resources
 
 ### Your turn!
 
+#### Exercise 1: More with Starbucks
+
+a. Add an aesthetic to the world map that sets the color of the points according to the ownership type. What, if anything, can you deduce from this visualization?  
+b. Construct a new map of Starbucks locations in the Twin Cities metro area (approximately the 5 county metro area).  
+c. In the Twin Cities plot, play with the zoom number. What does it do?  (just describe what it does - don't actually include more than one map). 
+d. Try a couple different map types (see `get_stamenmap()` in help and look at `maptype`). Include a map with one of the other map types.
+e. Add a point to the map that indicates Macalester College and label it appropriately. There are many ways you can do think, but I think it's easiest with the `annotate()` function (see `ggplot2` cheatsheet).
 
 
 ## Choropleths
