@@ -22,6 +22,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 library(tidyverse)     # for data cleaning and plotting
 library(googlesheets4) # for reading googlesheet data
 library(lubridate)     # for date manipulation
+library(openintro)     # for the abbr2state() function
 library(palmerpenguins)# for Palmer penguin data
 library(maps)          # for map data
 library(ggmap)         # for mapping points on maps
@@ -167,8 +168,31 @@ c. In the Twin Cities plot, play with the zoom number. What does it do?  (just d
 d. Try a couple different map types (see `get_stamenmap()` in help and look at `maptype`). Include a map with one of the other map types.
 e. Add a point to the map that indicates Macalester College and label it appropriately. There are many ways you can do think, but I think it's easiest with the `annotate()` function (see `ggplot2` cheatsheet).
 
-
 ## Choropleths
+
+
+```{r}
+#US states map information - coordinates used to draw borders
+states_map <- map_data("state")
+
+#Create a new Starbucks dataset that 
+# - filters to the US
+# - summarizes the number of Starbucks in each state
+# - has full names of states in lowercase letters (to match to states_map)
+
+starbucks_us_by_state <- Starbucks %>% 
+  filter(Country == "US") %>% 
+  count(`State/Province`) %>% 
+  mutate(state_name = str_to_lower(abbr2state(`State/Province`))) 
+
+# map that colors state by number of Starbucks
+starbucks_us_by_state %>% 
+  ggplot(aes(fill = n)) +
+  geom_map(aes(map_id = state_name), map = states_map) +
+  #This assures the map looks decently nice:
+  expand_limits(x = states_map$long, y = states_map$lat) + 
+  theme_map()
+```
 
 
 ### Your turn!
