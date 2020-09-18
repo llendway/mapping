@@ -160,42 +160,159 @@ So, the final map as a world map as the background with points plotted on top th
 
 ### Your turn!
 
-#### Exercise 1: More with Starbucks
+#### Exercise: More with Starbucks
 
 a. Add an aesthetic to the world map that sets the color of the points according to the ownership type. What, if anything, can you deduce from this visualization?  
+
 b. Construct a new map of Starbucks locations in the Twin Cities metro area (approximately the 5 county metro area).  
-c. In the Twin Cities plot, play with the zoom number. What does it do?  (just describe what it does - don't actually include more than one map). 
-d. Try a couple different map types (see `get_stamenmap()` in help and look at `maptype`). Include a map with one of the other map types.
+
+c. In the Twin Cities plot, play with the zoom number. What does it do?  (just describe what it does - don't actually include more than one map).  
+
+d. Try a couple different map types (see `get_stamenmap()` in help and look at `maptype`). Include a map with one of the other map types.  
+
 e. Add a point to the map that indicates Macalester College and label it appropriately. There are many ways you can do think, but I think it's easiest with the `annotate()` function (see `ggplot2` cheatsheet).
 
 ## Choropleths
 
+Geographical data needn't be expressed by latitude and longitude. For choropleth maps, instead of visualizing our data as points with different aesthetics (size, color, transparency, etc.), we color different regions of the maps based on data values. To do this we need to specify both the geometric regions on which the data resides (counties, states, zip codes, etc.), and then wrangle the data so that there is one value per region. 
+
+Let's return to the Starbucks data. First, we will create a new dataset, `starbucks_us_by_state` that limits the data to the US, finds the number of Starbucks in each state, and creates a state name that is in all lowercase letters that matches the state name in the `region` variable of the `states_map` dataset.
+
+The `states_map` dataset gives information about creating the borders of the US states. The data is retrieved using the `map_data()` function. Run `?map_data` in the console to see more information about what other maps are available. There are also other packages that provide different types of maps.
+
+Then, we can use `geom_map()` to create a choropleth map. Let's take a look at the map and we'll go through the details after.
 
 ```{r}
-#US states map information - coordinates used to draw borders
-states_map <- map_data("state")
-
 #Create a new Starbucks dataset that 
 # - filters to the US
 # - summarizes the number of Starbucks in each state
-# - has full names of states in lowercase letters (to match to states_map)
+# - has full names of states in lowercase letters (to match to states_map data created next)
 
 starbucks_us_by_state <- Starbucks %>% 
   filter(Country == "US") %>% 
   count(`State/Province`) %>% 
   mutate(state_name = str_to_lower(abbr2state(`State/Province`))) 
 
+#US states map information - coordinates used to draw borders
+states_map <- map_data("state")
+
 # map that colors state by number of Starbucks
 starbucks_us_by_state %>% 
-  ggplot(aes(fill = n)) +
-  geom_map(aes(map_id = state_name), map = states_map) +
+  ggplot() +
+  geom_map(map = states_map,
+           aes(map_id = state_name,
+               fill = n)) +
   #This assures the map looks decently nice:
   expand_limits(x = states_map$long, y = states_map$lat) + 
   theme_map()
 ```
 
+Now, let's look more closely at what each piece of the code below is doing.
+
+```{r starbucks-chor-map, eval=FALSE}
+starbucks_us_by_state %>% 
+  ggplot() +
+  geom_map(map = states_map,
+           aes(map_id = state_name,
+               fill = n)) +
+  expand_limits(x = states_map$long, y = states_map$lat) + 
+  theme_map()
+```
+
+### Choose a map
+
+The `map` argument tells R at which level to create the map. Really, it tells it how to draw all the borders This is a very special data set. According to the `geom_map()` documentation, it is a "data frame that contains the map coordinates ... It **must** contain columns x or long, y or lat, and region or id." We are using the `map_data()` function to create the map file (see above for more detail0. You can open the map data, `states_map`, and see that it adheres to the rules.
+
+```{r, echo=FALSE}
+decorate_chunk("starbucks-chor-map", eval = FALSE) %>% 
+  flair("map = ")
+```
+
+### Connect map id/region variable to data being plotted
+
+The `map_id` inside of `aes()` is a required aesthetic for the `geom_map()` geom. It tells R which variable is the region/id variable, in this case the state. It connects the `region` or `id` from the map (`region` variable in `states_map` dataset, in this example) to the dataset being plotted (`state_name` in `starbucks_us_by_state`, in this example). So `state_name` needs to have the same form as `region`, which is why we modified the state names in `starbucks_us_by_state`.
+
+```{r, echo=FALSE}
+decorate_chunk("starbucks-chor-map", eval = FALSE) %>% 
+  flair("map_id = ")
+```
+
+
+### Use `ggplot2` features
+
+We tell it to fill in the states by the variable `n`, the number of Starbucks in each state. With the `geom_map()` geom, it will fill in the borders of the regions we defined in the `map` argument.
+
+```{r, echo=FALSE}
+decorate_chunk("starbucks-chor-map", eval = FALSE) %>% 
+  flair("fill = ")
+``` 
+
+### `expand_limits()`
+
+Use `expand_limits()` to assure that the map covers the entire area it's supposed to. We put the longitude variable from `states_map` for the `x` argument and the latitude variable from `states_map` for the `y` argument to assure the map stretches across the entire range of longitudes and latitudes in the map. There may be a better way to do this but I have yet to find it, and when I leave it out, I don't even see the map. 
+
+```{r, echo=FALSE}
+decorate_chunk("starbucks-chor-map", eval = FALSE) %>% 
+  flair("expand_limits")
+```
+
+### `theme_map()`
+
+This is a personal preference. I like the way `theme_map()` makes the map look.
+
+```{r, echo=FALSE}
+decorate_chunk("starbucks-chor-map", eval = FALSE) %>% 
+  flair("theme_map()")
+```
+
+### Add `ggplot2` layers
+
+You can add any of the `ggplot2` layers on top of this map. In this example, I've added the MN Starbucks as points, a title, and changed the legend background (so it doesn't have one and overlap California).
+
+```{r}
+starbucks_us_by_state %>% 
+  ggplot() +
+  geom_map(map = states_map,
+           aes(map_id = state_name,
+               fill = n)) +
+  geom_point(data = Starbucks %>% filter(`State/Province` == "MN"),
+             aes(x = Longitude, y = Latitude),
+             size = .05,
+             alpha = .2, 
+             color = "goldenrod") +
+  expand_limits(x = states_map$long, y = states_map$lat) + 
+  labs(title = "Starbucks in MN") +
+  theme_map() +
+  theme(legend.background = element_blank())
+```
+
+
+### Demo video
+
+### Resources
 
 ### Your turn!
+
+#### Exercise: Even more with Starbucks
+
+The example I showed did not account for population of each state in the map. In the code below, a new variable is created, `starbucks_per_10000`, that gives the number of Starbucks per 10,000 people. It is in the `starbucks_with_2018_pop_est` dataset.
+
+```{r}
+census_pop_est_2018 <- read_csv("https://www.dropbox.com/s/6txwv3b4ng7pepe/us_census_2018_state_pop_est.csv?dl=1") %>% 
+  separate(state, into = c("dot","state"), extra = "merge") %>% 
+  select(-dot) %>% 
+  mutate(state = str_to_lower(state))
+
+starbucks_with_2018_pop_est <-
+  starbucks_us_by_state %>% 
+  left_join(census_pop_est_2018,
+            by = c("state_name" = "state")) %>% 
+  mutate(starbucks_per_10000 = (n/est_pop_2018)*10000)
+```
+
+a. **`dplyr` review**: Look through the code above and describe what each line of code does.
+
+b. Create a choropleth map that shows the number of Starbucks per 10,000 people on a map of the US. Use a new fill color, add points for all Starbucks in the US (except Hawaii and Alaska), add an informative title for the plot, and include a caption that says who created the plot (you!). Make a conclusion about what you observe.
 
 
 ## Using `leaflet` to create maps
