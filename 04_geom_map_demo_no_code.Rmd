@@ -1,0 +1,123 @@
+---
+title: "Mapping data in R: `geom_map()` demo"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    code_download: true
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r libraries}
+library(tidyverse)     # for data cleaning and plotting
+library(googlesheets4) # for reading googlesheet data
+library(lubridate)     # for date manipulation
+library(openintro)     # for the abbr2state() function
+library(palmerpenguins)# for Palmer penguin data
+library(maps)          # for map data
+library(ggmap)         # for mapping points on maps
+library(ggthemes)      # for more themes (including theme_map())
+gs4_deauth()           # To not have to authorize each time you knit.
+theme_set(theme_minimal())
+```
+
+In this demo, we are going to use `geom_map()` to plot county level COVID 19 cases. Before jumping into the mapping code, we are going to talk about some of the things we did when we read the data in because it is a great review of some of the wrangling tools we've been learning.
+
+We use the `map_data()` function to get MN county border information. We read in a file that gives the population of counties in MN - data are from [here](https://www.minnesota-demographics.com/counties_by_population). And, we read in data from the [NYT](https://github.com/nytimes/covid-19-data) giving current COVID-19 case counts. 
+
+```{r}
+county_mn <- map_data("county") %>% 
+  # filter to MN
+  filter(region == "minnesota") %>% 
+  # region is currently the state, so drop that
+  select(-region) %>% 
+  # rename subregion, region because it will look for that variable
+  rename(region = subregion)
+
+# MN county populations
+mn_county_pop <- read_csv("https://raw.githubusercontent.com/llendway/mapping/master/data/mn_county_population.csv") %>% 
+  # get the county name to match the one from the county_mn file
+  # Use separate() to remove "County" at the end of each county name
+  separate(county,
+           sep = -7:-1,
+           into = c("county", "extra")) %>% 
+  # Drop that variable 
+  select(-extra) %>% 
+  # Make counties lower case without any periods
+  mutate(county = str_remove(str_to_lower(county), "\\."))
+
+
+# COVID 19 data from NYT
+mn_covid_county <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
+  # Filter to MN
+  filter(state == "Minnesota") %>% 
+  # Keep data from most recent date
+  group_by(county, fips) %>% 
+  top_n(n = 1, wt = date) %>% 
+  # Make counties lower case without any periods
+  mutate(county = str_remove(str_to_lower(county), "\\.")) %>% 
+  # Join with the county population data
+  left_join(mn_county_pop,
+            by = "county")
+```
+
+Here, I check to make sure I haven't made any mistakes, which I did, at first.
+
+```{r}
+mn_covid_county %>% 
+  anti_join(distinct_mn_county,
+            by = c("county" = "region"))
+
+mn_covid_county %>% 
+  anti_join(mn_county_pop,
+            by = "county")
+```
+
+Now, let's plot the data. First we will plot cases by county.
+
+```{r}
+mn_covid_county %>% 
+  ggplot() +
+  geom_map(map = ,
+           aes(map_id = ,
+               fill = )) +
+  #This assures the map looks decently nice:
+  expand_limits(x = , y = ) + 
+  theme_map()
+```
+
+The previous map mostly reflects the popoulation of the counties. Instead, we can plot the number of cases per 10,000.
+
+```{r}
+mn_covid_county %>% 
+  ggplot() +
+  geom_map(map = county_mn,
+           aes(map_id = county,
+               fill = )) +
+  expand_limits(x = county_mn$long, y = county_mn$lat) +
+  theme_map()
+```
+
+Lastly, let's make the graph look prettier.
+
+* Add labels  
+* Change the fill scale  
+* Get rid of legend background  
+* Change code chunk options: fig.width and fig.asp
+
+```{r}
+mn_covid_county %>% 
+  ggplot() +
+  geom_map(map = county_mn,
+           aes(map_id = county,
+               fill = cases/population*10000)) +
+  expand_limits(x = county_mn$long, y = county_mn$lat) + 
+  labs(title = "",
+       caption = "Source: https://github.com/nytimes/covid-19-data",
+       fill = "") +
+  theme_map() +
+```

@@ -318,10 +318,41 @@ starbucks_us_by_state %>%
   theme(legend.background = element_blank())
 ```
 
-
 ### Demo video
 
+And you are ready to watch another demo video!
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/iS59a5wDrEM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+[Voicethread: `geom_map()` demo](https://voicethread.com/share/15484794/)
+
+```{r, echo=FALSE}
+download_file(
+  path = "04_geom_map_demo_no_code.Rmd",
+  button_label = "Download geom_map() demo file (without code)",
+  button_type = "warning",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
+
+```{r, echo=FALSE}
+download_file(
+  path = "04_geom_map_demo.Rmd",
+  button_label = "Download geom_map() demo file (with code)",
+  button_type = "info",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
+
+
 ### Resources
+
+* [ggplot2 documentation](https://ggplot2.tidyverse.org/reference/geom_map.html)  
+* [Example](https://rstudio-pubs-static.s3.amazonaws.com/78148_6dd49b5dab4c4f5a8b1a74e5893ff17d.html) by Arie Voorman (some things could be out of date since it's from 2015)
 
 ### Your turn!
 
