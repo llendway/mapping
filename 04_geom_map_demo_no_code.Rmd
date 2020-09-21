@@ -119,5 +119,5 @@ mn_covid_county %>%
   labs(title = "",
        caption = "Source: https://github.com/nytimes/covid-19-data",
        fill = "") +
-  theme_map() +
+  theme_map()
 ```
