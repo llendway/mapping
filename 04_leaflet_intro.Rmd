@@ -9,7 +9,11 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, 
+                      warning = FALSE,
+                      message = FALSE, 
+                      fig.width = 4, 
+                      fig.height = 3)
 ```
 
 ```{r libraries, include=FALSE}
@@ -23,16 +27,14 @@ library(flair)         # for highlighting code (use github version)
  library(xaringanExtra) # for tab setting
 ```
 
-
 ```{r data, include=FALSE}
 ```
-
 
 
 ## `leaflet` concept map
 
 <center>
-![](../../images/leaflet_concept_map.png){width=400}
+![](../../images/leaflet_concept_map.png){width=650}
 </center>
 
 <div class="notes">
@@ -85,7 +87,7 @@ Here is my made up dataset which includes some of my favorite places in St. Paul
 
 ## Example
 
-```{r, leaflet-simple-map}
+```{r}
 leaflet(data = favorite_stp_by_lisa) %>% #base plot
   addTiles() %>% #base map
   addMarkers() #Adds markers - knows lat and long from names in data
@@ -93,7 +95,7 @@ leaflet(data = favorite_stp_by_lisa) %>% #base plot
 
 
 <div class="notes">
-The function we will use to create the maps will look for certain variable names for latitude (lat, latitude) and longitude (lng, long, or longitude). If you do not name them one of those things or if the data you are using doesn't name them that, you need to call out the name explicitly. You can use a "two-finger scroll" to zoom in and out
+The function we will use to create the maps will look for certain variable names for latitude (lat, latitude) and longitude (lng, long, or longitude). If you do not name them one of those things or if the data you are using doesn't name them that, you need to call out the name explicitly. You can scroll to zoom in and out
 </div>
 
 ## Example - named latitude and longitude
@@ -146,7 +148,7 @@ We changed the base map with `addProviderTiles()`. The tutorial document goes in
 
 We changed the marker type by using `addCircles()` instead of `addMarkers()`. 
 
-All variable arguments are preceeded with a tilde, `~`.
+All variable arguments are preceded with a tilde, `~`.
 
 The `weight` argument tells it how thick to make the lines or points, pixels. The `opacity` argument is the transparency, like the `alpha` argument in `ggplot2`. Note the color needs to be in "hex" form. I used the `col2hex()` function to do that since I don't have any hex colors memorized. The colors also need to be valid R colors. 
 </div>
@@ -177,27 +179,117 @@ decorate_chunk("leaflet-polylines") %>%
 This map is also the "same" as the ones I have already created with a new base map and a line to trace my route, which was created with the `addPolylines()` layer. It traces it in the order they are entered in the dataset. 
 </div>
 
-## Example
+## Example - choropleth maps
+
+```{r}
+nc <- st_read(system.file("shape/nc.shp", package="sf"), 
+              quiet = TRUE) %>% 
+  mutate(sid_per_1000birth_79 = SID79/BIR79*1000)
+```
+
+```{r, echo=FALSE}
+slice(nc %>% select(NAME, geometry), 1:5)
+```
 
 <div class="notes">
+Use the function `st_read()` downloads the shape file for the counties of North Carolina, which is included in the `sf` package. 
+This dataset has number of births and number of SIDS cases in each county of North Carolina from 1974-1979 and 1979-1984. I computed a variable called `sid_per_1000birth_79` which is the number of sids cases per 1000 births in 1979. 
+
+I have printed out the first 5 rows of the data with the NAMES and geometry variables from the dataset. The `geometry` variable contains information about how to plot the boundaries of the counties. The `leaflet` function knows that the `geometry` variable contains this special information.
+
+To learn more about the data type `nc` into the Help menu or `?nc` into the console. 
 </div>
 
-## Example
+## Example - initial border plot
+
+```{r}
+leaflet(nc) %>% 
+  addTiles() %>% 
+  addPolygons()
+```
+
 
 <div class="notes">
+This plot puts the map with North Carolina county borders on top of the Open Street Map. This map isn't that interesting by itself. Now, let's use some of the data to enhance the graph.
 </div>
 
-## Example
+## Example - creating the choropleth
+
+```{r choro}
+#creates a function that can be used to map a variable to
+#the color palette using viridis
+pal <- colorNumeric("viridis", 
+                     domain = nc$sid_per_1000birth_79) 
+
+leaflet(nc) %>% 
+  addTiles() %>% 
+  addPolygons(
+    fillColor = ~pal(sid_per_1000birth_79), #fills according to that variable
+    fillOpacity = 0.7) #like alpha in ggplot
+```
 
 <div class="notes">
+A choropleth map means that we want to color the polygons, in this case counties, by a variable. When we do this in `ggplot()`, we can map a variable to color or fill inside the aesthetic. But, in the leaflet functions, we can't do this. Instead, we need to create a variable of colors. 
+
+Thankfully, there are functions that help us do that. Let's walk through the detail of how we created this graph. 
 </div>
 
-## Example
+## Example - mapping variable to color
+
+```{r, echo=FALSE}
+decorate_chunk("choro", eval = FALSE) %>% 
+  flair("pal <- ") %>% 
+  flair("colorNumeric") %>% 
+  flair("pal(sid_per_1000birth_79)")
+```
+
+```{r}
+head(pal(nc$sid_per_1000birth_79))
+```
+
 
 <div class="notes">
+The `colorNumeric()` function returns a function that maps a variable's values to colors in the given palette, in this case "viridis". So, `pal()` is a function. We can then use that function inside `addPolygons()`. If we apply the function to the `sid_per_1000birth_79` variable, it returns a variable of hex colors and the variable of colors is used to fill the counties. 
+
+Again, this is different from ggplot, where we could map a variable to color or fill and it would do the translating of variable to color scale for us. In the leaflet functions, we have to explicitly provide the colors in a variable. The `colorNumeric()` and other functions I talk about in the tutorial will help you do that. 
 </div>
 
-## Example
+## Example - more complex map
+
+```{r, echo=FALSE, fig.width=6, fig.height=4.5}
+county_centroid_lat_long <- as.tibble(st_coordinates(st_centroid(nc))) %>% 
+  rename(centr_long = X, centr_lat = Y)
+
+nc_centroid <-  county_centroid_lat_long %>% 
+  bind_cols(st_drop_geometry(nc) %>% select(NAME, sid_per_1000birth_79))
+
+leaflet(nc) %>% 
+  addTiles() %>% 
+  addPolygons(
+    stroke = FALSE, #skips drawing the borders
+    fillColor = ~pal(sid_per_1000birth_79), #fills according to that variable
+    fillOpacity = 0.7, #like alpha
+    smoothFactor = 0.5, #how much to simplify the plot when zooming
+    #highlight changes what happens to the shape when we mouse over it
+    highlight = highlightOptions(weight = 5, 
+                                 color = "black",
+                                 fillOpacity = 0.9,
+                                 bringToFront = FALSE)) %>%
+  addCircles(data = nc_centroid,
+             lng = ~centr_long, 
+             lat =  ~centr_lat, 
+             popup = ~paste(NAME,": ",
+                            round(sid_per_1000birth_79, 2),
+                            sep=""),
+             radius = 2) %>% 
+  addLegend(pal = pal, 
+            values = ~sid_per_1000birth_79, 
+            opacity = 0.5, 
+            title = NULL,
+            position = "bottomright") 
+```
+
 
 <div class="notes">
+Just like we've seen with graphs made using `ggplot2`, `leaflet` maps are very customizeable. Hopefully this map gets you excited to learn more in the tutorial and demo video. 
 </div>

@@ -414,6 +414,22 @@ This library uses a different plotting framework from `ggplot2` although it stil
 
 ### Introductory video
 
+Watch the video that introduces `leaflet()` functions.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/w5U62wUki3E" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+[Voicethread: Mapping in R with leaflet](https://voicethread.com/share/15526634/)
+
+```{r, echo=FALSE}
+download_file(
+  path = "04_leaflet_intro.html",
+  button_label = "Download slides",
+  button_type = "info",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
 
 #### Steps to create a map
 
@@ -423,7 +439,9 @@ This library uses a different plotting framework from `ggplot2` although it stil
 4. Repeat step 3 as desired.  
 5. Print the map widget to display it.
 
-Now, I create a basic map and add my points (the points are a layer on the map).
+#### Creating a map
+
+Now, I create a basic map and add my points (the points are a layer on the map). The data are in `favorite_stp_by_lisa`. 
 
 The function we will use to create the maps will look for certain variable names for latitude (lat, latitude) and longitude (lng, long, or longitude). If you do not name them one of those things or if the data you are using doesn't name them that, you need to call out the name explicitly. You can use a "two-finger scroll" to zoom in and out.
 
@@ -476,9 +494,16 @@ leaflet(data = favorite_stp_by_lisa) %>%
                lat = ~lat, 
                color = col2hex("darkred"))
 ```
+
+#### Choropleth layers with `addPolygons()`
+
+
+
 ### Resources
 
 * [Detailed documenation](https://rstudio.github.io/leaflet/) (with examples)
 
 * [Cheatsheet](https://ugoproto.github.io/ugo_r_doc/pdf/leaflet-cheat-sheet.pdf)
+
+* [Provider map previews](http://leaflet-extras.github.io/leaflet-providers/preview/)
 
