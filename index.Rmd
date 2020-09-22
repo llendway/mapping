@@ -44,6 +44,19 @@ library(flair) # for highlighting code
 ```{r data}
 # Starbucks locations
 Starbucks <- read_csv("https://www.macalester.edu/~ajohns24/Data/Starbucks.csv")
+
+# Lisa's favorite St. Paul places - used in leaflet example
+favorite_stp_by_lisa <- tibble(
+  place = c("Home", "Macalester College", "Adams Spanish Immersion", 
+            "Spirit Gymnastics", "Bama & Bapa", "Now Bikes",
+            "Dance Spectrum", "Pizza Luce", "Brunson's"),
+  long = c(-93.1405743, -93.1712321, -93.1451796, 
+           -93.1650563, -93.1542883, -93.1696608, 
+           -93.1393172, -93.1524256, -93.0753863),
+  lat = c(44.950576, 44.9378965, 44.9237914,
+          44.9654609, 44.9295072, 44.9436813, 
+          44.9399922, 44.9468848, 44.9700727)
+  )
 ```
 
 ## Learning Goals
@@ -390,3 +403,82 @@ b. Create a choropleth map that shows the number of Starbucks per 10,000 people 
 
 
 ## Using `leaflet` to create maps
+
+### Concept Map
+
+![](../../images/leaflet_concept_map.png)
+
+[Leaflet](https://leafletjs.com/) is an open-source JavaScript library for creating maps. It can be used outside of R, but we will only discuss using the `leaflet` library in R. 
+
+This library uses a different plotting framework from `ggplot2` although it still has a `tidyverse` feel due to its use of the pipe, `%>%` and the way it adds layers to the plot, just like in `ggplot2`.
+
+### Introductory video
+
+
+#### Steps to create a map
+
+1. Create a map widget by calling `leaflet()` and telling it the data to use.  
+2. Add a base map using `addTiles()` (the default) or `addProviderTiles()`.
+3. Add layers to the map by using layer functions (e.g. , `addMarkers()`, `addPolygons()`) to modify the map widget.   
+4. Repeat step 3 as desired.  
+5. Print the map widget to display it.
+
+Now, I create a basic map and add my points (the points are a layer on the map).
+
+The function we will use to create the maps will look for certain variable names for latitude (lat, latitude) and longitude (lng, long, or longitude). If you do not name them one of those things or if the data you are using doesn't name them that, you need to call out the name explicitly. You can use a "two-finger scroll" to zoom in and out.
+
+```{r}
+leaflet(data = favorite_stp_by_lisa) %>% #base plot
+  addTiles() %>% #base map - default is openstreet map but that can be changed
+  addMarkers() #Adds markers - knows lat and long from names in data
+```
+
+Same as above but explicitly told it latitude and longitude, which you would need to do if those variables had a name not recognized by the function, and added labels. **WARNING: DO NOT FORGET THE ~ BEFORE THE VARIABLE NAMES!!!** 
+
+```{r}
+leaflet(data = favorite_stp_by_lisa) %>% 
+  addTiles() %>% 
+  addMarkers(lng = ~long, lat = ~lat, label = ~place) 
+```
+
+We can change just about everything about our map. This is the same plot as above with some aesthetic changes. Some tips:
+
+* To see all available provider base maps, type `providers` in the console. 
+
+* To access those maps, use `providers$PROVIDERNAME` inside the `addProviderTiles()` function, where `PROVIDERNAME` is one of those listed `providers`. When you type `provider$` a list should show up that you can click on. 
+
+* Colors need to be in "hex" form. I used the `col2hex()` function from the `gplot` library to do that since I don't have any hex colors memorized. You can also google hex colors and find websites to help you out. 
+
+* Search `addControl` in the Help or type `?addControl` into the console to see what all the arguments mean and how you can change them.
+
+```{r}
+leaflet(data = favorite_stp_by_lisa) %>% 
+  addProviderTiles(providers$Stamen.Watercolor) %>% 
+  addCircles(lng = ~long, 
+             lat = ~lat, 
+             label = ~place, 
+             weight = 10, 
+             opacity = 1, color = col2hex("darkblue")) 
+```
+
+The map below is also the "same" as the ones I have already created with a new base map and a line to trace my route, which was created with the `addPolylines()` layer. It traces it in the order they are entered in the dataset.
+
+```{r}
+leaflet(data = favorite_stp_by_lisa) %>% 
+  addProviderTiles(providers$CartoDB.DarkMatter) %>% 
+  addCircles(lng = ~long, 
+             lat = ~lat, 
+             label = ~place, 
+             weight = 10, 
+             opacity = 1, 
+             color = col2hex("darkred")) %>% 
+  addPolylines(lng = ~long, 
+               lat = ~lat, 
+               color = col2hex("darkred"))
+```
+### Resources
+
+* [Detailed documenation](https://rstudio.github.io/leaflet/) (with examples)
+
+* [Cheatsheet](https://ugoproto.github.io/ugo_r_doc/pdf/leaflet-cheat-sheet.pdf)
+

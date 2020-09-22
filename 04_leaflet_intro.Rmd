@@ -1,0 +1,203 @@
+---
+title: "Creating maps with `leaflet`"
+author: "Lisa Lendway"
+output: 
+  ioslides_presentation:
+    widescreen: true
+    smaller: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+```{r libraries, include=FALSE}
+library(tidyverse)     # for data cleaning and plotting
+library(gplots)        # for col2hex() function
+library(RColorBrewer)  # for color palettes
+library(sf)            # for working with spatial data
+library(leaflet)       # for highly customizable mapping
+library(ggthemes)      # for more themes (including theme_map())
+library(flair)         # for highlighting code (use github version)
+ library(xaringanExtra) # for tab setting
+```
+
+
+```{r data, include=FALSE}
+```
+
+
+
+## `leaflet` concept map
+
+<center>
+![](../../images/leaflet_concept_map.png){width=400}
+</center>
+
+<div class="notes">
+[Leaflet](https://leafletjs.com/) is an open-source JavaScript library for creating maps. It can be used outside of R, but we will only discuss using the `leaflet` library in R. 
+
+This library uses a different plotting framework from `ggplot2` although it still has a `tidyverse` feel due to its use of the pipe, `%>%` and the way it adds layers to the plot, just like in `ggplot2`.   
+
+This video will go over the basic functions and syntax needed to create maps using `leaflet`. There will be another video that walks through more detail of the code in R Studio. The concept map you see here illustrates how some of the main functions we'll use for creating maps. We will discuss these in more detail in both this video and the next. 
+
+</div>
+
+
+## Data
+
+```{r, echo=FALSE}
+favorite_stp_by_lisa <- tibble(
+  place = c("Home", "Macalester College", "Adams Spanish Immersion", 
+            "Spirit Gymnastics", "Bama & Bapa", "Now Bikes",
+            "Dance Spectrum", "Pizza Luce", "Brunson's"),
+  long = c(-93.1405743, -93.1712321, -93.1451796, 
+           -93.1650563, -93.1542883, -93.1696608, 
+           -93.1393172, -93.1524256, -93.0753863),
+  lat = c(44.950576, 44.9378965, 44.9237914,
+          44.9654609, 44.9295072, 44.9436813, 
+          44.9399922, 44.9468848, 44.9700727)
+  )
+favorite_stp_by_lisa
+```
+
+<div class="notes">
+Here is my made up dataset which includes some of my favorite places in St. Paul. 
+</div>
+
+## Steps for creating a map
+
+1. Create a map widget by calling `leaflet()` and telling it the data to use.  
+2. Add a base map using `addTiles()` (the default) or `addProviderTiles()`.
+3. Add layers to the map by using layer functions (e.g. , `addMarkers()`, `addPolygons()`) to modify the map widget.   
+4. Repeat step 3 as desired.  
+5. Print the map widget to display it.
+
+<div class="notes">
+1. Create a map widget by calling `leaflet()` and telling it the data to use.  
+2. Add a base map using `addTiles()` (the default) or `addProviderTiles()`.
+3. Add layers to the map by using layer functions (e.g. , `addMarkers()`, `addPolygons()`) to modify the map widget.   
+4. Repeat step 3 as desired.  
+5. Print the map widget to display it.
+
+</div>
+
+## Example
+
+```{r, leaflet-simple-map}
+leaflet(data = favorite_stp_by_lisa) %>% #base plot
+  addTiles() %>% #base map
+  addMarkers() #Adds markers - knows lat and long from names in data
+```
+
+
+<div class="notes">
+The function we will use to create the maps will look for certain variable names for latitude (lat, latitude) and longitude (lng, long, or longitude). If you do not name them one of those things or if the data you are using doesn't name them that, you need to call out the name explicitly. You can use a "two-finger scroll" to zoom in and out
+</div>
+
+## Example - named latitude and longitude
+
+```{r leaflet-add-latlong, eval=FALSE, echo=FALSE}
+leaflet(data = favorite_stp_by_lisa) %>% 
+  addTiles() %>% 
+  addMarkers(lng = ~long, 
+             lat = ~lat, 
+             label = ~place) 
+```
+
+```{r, echo=FALSE}
+decorate_chunk("leaflet-add-latlong") %>% 
+  flair("lng = ~long, lat = ~lat, label = ~place")
+```
+
+
+
+<div class="notes">
+Same as previous map but explicitly told it latitude and longitude, which you would need to do if those variables had a name not recognized by the function I also added labels. **WARNING: DO NOT FORGET THE ~ BEFORE THE VARIABLE NAME!!!** I have spent more time than I'd like to admit trying to debug that error when it happens ...
+
+</div>
+
+## Example - change base map and marker type
+
+```{r leaflet-base-marker, eval=FALSE, echo=FALSE}
+leaflet(data = favorite_stp_by_lisa) %>% 
+  addProviderTiles(providers$Stamen.Watercolor) %>% 
+  addCircles(lng = ~long, 
+             lat = ~lat, 
+             label = ~place, 
+             weight = 10, 
+             opacity = 1, 
+             color = col2hex("darkblue")) 
+```
+
+```{r, echo=FALSE}
+decorate_chunk("leaflet-base-marker") %>% 
+  flair("addProviderTiles") %>% 
+  flair("addCircles") %>% 
+  flair("~")
+```
+
+
+<div class="notes">
+We can change just about everything about our map. This is the same plot as the previous slide with some aesthetic changes. 
+
+We changed the base map with `addProviderTiles()`. The tutorial document goes into more detail about how to choose the base map.
+
+We changed the marker type by using `addCircles()` instead of `addMarkers()`. 
+
+All variable arguments are preceeded with a tilde, `~`.
+
+The `weight` argument tells it how thick to make the lines or points, pixels. The `opacity` argument is the transparency, like the `alpha` argument in `ggplot2`. Note the color needs to be in "hex" form. I used the `col2hex()` function to do that since I don't have any hex colors memorized. The colors also need to be valid R colors. 
+</div>
+
+## Example - adding another layer
+
+```{r leaflet-polylines, eval=FALSE, echo=FALSE}
+leaflet(data = favorite_stp_by_lisa) %>% 
+  addProviderTiles(providers$CartoDB.DarkMatter) %>% 
+  addCircles(lng = ~long, 
+             lat = ~lat, 
+             label = ~place, 
+             weight = 10, 
+             opacity = 1, 
+             color = col2hex("darkred")) %>% 
+  addPolylines(lng = ~long, 
+               lat = ~lat, 
+               color = col2hex("darkblue"))
+```
+
+```{r, echo=FALSE}
+decorate_chunk("leaflet-polylines") %>% 
+  flair("addPolylines")
+```
+
+
+<div class="notes">
+This map is also the "same" as the ones I have already created with a new base map and a line to trace my route, which was created with the `addPolylines()` layer. It traces it in the order they are entered in the dataset. 
+</div>
+
+## Example
+
+<div class="notes">
+</div>
+
+## Example
+
+<div class="notes">
+</div>
+
+## Example
+
+<div class="notes">
+</div>
+
+## Example
+
+<div class="notes">
+</div>
+
+## Example
+
+<div class="notes">
+</div>
