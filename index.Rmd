@@ -57,6 +57,26 @@ favorite_stp_by_lisa <- tibble(
           44.9654609, 44.9295072, 44.9436813, 
           44.9399922, 44.9468848, 44.9700727)
   )
+
+
+# North Carolina births and sids deaths 
+
+nc <- st_read(system.file("shape/nc.shp", package="sf"), 
+              quiet = TRUE) %>% 
+  mutate(sid_per_1000birth_79 = SID79/BIR79*1000)
+
+# Compute centroid (center) of each county
+county_centroid_lat_long <- as.tibble(st_coordinates(st_centroid(nc))) %>% 
+  rename(centr_long = X, 
+         centr_lat = Y)
+
+# County names and sid_per_1000birth_79
+nc_centroid_county <- st_drop_geometry(nc) %>% 
+  select(NAME, sid_per_1000birth_79)
+
+# All centroid level info
+nc_centroid <-  county_centroid_lat_long %>% 
+  bind_cols(nc_centroid_county)
 ```
 
 ## Learning Goals
@@ -414,7 +434,7 @@ This library uses a different plotting framework from `ggplot2` although it stil
 
 ### Introductory video
 
-Watch the video that introduces `leaflet()` functions.
+Watch the video that introduces `leaflet()` functions. 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/w5U62wUki3E" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -439,35 +459,46 @@ download_file(
 4. Repeat step 3 as desired.  
 5. Print the map widget to display it.
 
-#### Creating a map
+#### Creating a map with markers/points
 
-Now, I create a basic map and add my points (the points are a layer on the map). The data are in `favorite_stp_by_lisa`. 
+Below, I create a basic map and add my points (the points are a layer on the map). The data are in `favorite_stp_by_lisa` - see the data section at the beginning for more details. 
 
-The function we will use to create the maps will look for certain variable names for latitude (lat, latitude) and longitude (lng, long, or longitude). If you do not name them one of those things or if the data you are using doesn't name them that, you need to call out the name explicitly. You can use a "two-finger scroll" to zoom in and out.
+The function we will use to create the maps will look for certain variable names for latitude (lat, latitude) and longitude (lng, long, or longitude). If you do not name them one of those things or if the data you are using doesn't name them that, you need to call out the name explicitly (you'll see that next). You can use a "two-finger scroll" to zoom in and out.
 
 ```{r}
 leaflet(data = favorite_stp_by_lisa) %>% #base plot
-  addTiles() %>% #base map - default is openstreet map but that can be changed
+  addTiles() %>% #base map - default is openstreet map 
   addMarkers() #Adds markers - knows lat and long from names in data
 ```
 
-Same as above but explicitly told it latitude and longitude, which you would need to do if those variables had a name not recognized by the function, and added labels. **WARNING: DO NOT FORGET THE ~ BEFORE THE VARIABLE NAMES!!!** 
+The graph below is the same as above, but in the code I explicitly told it latitude and longitude, which you would need to do if those variables had a name not recognized by the function, and added labels. **WARNING: DO NOT FORGET THE ~ BEFORE THE VARIABLE NAMES!!!** 
 
 ```{r}
 leaflet(data = favorite_stp_by_lisa) %>% 
   addTiles() %>% 
-  addMarkers(lng = ~long, lat = ~lat, label = ~place) 
+  addMarkers(lng = ~long, 
+             lat = ~lat, 
+             label = ~place) 
 ```
 
-We can change just about everything about our map. This is the same plot as above with some aesthetic changes. Some tips:
+We can change just about everything about our map. The plot below is the same plot as above with some aesthetic changes: 
 
-* To see all available provider base maps, type `providers` in the console. 
+* We changed the base map with `addProviderTiles()`. 
 
-* To access those maps, use `providers$PROVIDERNAME` inside the `addProviderTiles()` function, where `PROVIDERNAME` is one of those listed `providers`. When you type `provider$` a list should show up that you can click on. 
+  + To see all available provider base maps, type `providers` in the console.  
+  
+  + To access those maps, use `providers$PROVIDERNAME` inside the `addProviderTiles()` function, where `PROVIDERNAME` is one of those listed `providers`. When you type `provider$` a list should show up that you can click on. 
 
-* Colors need to be in "hex" form. I used the `col2hex()` function from the `gplot` library to do that since I don't have any hex colors memorized. You can also google hex colors and find websites to help you out. 
+* We changed the marker type by using `addCircles()` instead of `addMarkers()` - Search `addControl` in the Help or type `?addControl` into the console to see what all the arguments mean and how you can change them.
 
-* Search `addControl` in the Help or type `?addControl` into the console to see what all the arguments mean and how you can change them.
+* All variable arguments are preceded with a tilde, `~`.
+
+* The `weight` argument tells it how thick to make the lines or points, pixels. 
+
+* The `opacity` argument is the transparency, like the `alpha` argument in `ggplot2`. 
+
+* Colors need to be in "hex" form. I used the `col2hex()` function from the `gplot` library to do that since I don't have any hex colors memorized. The colors also need to be valid R colors.
+
 
 ```{r}
 leaflet(data = favorite_stp_by_lisa) %>% 
@@ -476,10 +507,11 @@ leaflet(data = favorite_stp_by_lisa) %>%
              lat = ~lat, 
              label = ~place, 
              weight = 10, 
-             opacity = 1, color = col2hex("darkblue")) 
+             opacity = 1, 
+             color = col2hex("darkblue")) 
 ```
 
-The map below is also the "same" as the ones I have already created with a new base map and a line to trace my route, which was created with the `addPolylines()` layer. It traces it in the order they are entered in the dataset.
+The map below is also the "same" as the ones I have already created with a new base map and a line to trace my route, which was created with the `addPolylines()` layer. It traces the locations in the order they are entered in the dataset.
 
 ```{r}
 leaflet(data = favorite_stp_by_lisa) %>% 
@@ -497,7 +529,97 @@ leaflet(data = favorite_stp_by_lisa) %>%
 
 #### Choropleth layers with `addPolygons()`
 
+In the data code chunk at the beginning, the function `st_read()` downloads the shape file for the counties of North Carolina, which is included in the `sf` package. 
+The dataset has number of births and number of SIDS cases in each county of North Carolina from 1974-1979 and 1979-1984. I computed a variable called `sid_per_1000birth_79` which is the number of sids cases per 1000 births in 1979. 
 
+Below, I printed out the first 5 rows of the data with the NAMES and geometry variables from the dataset. The `geometry` variable contains information about how to plot the boundaries of the counties. Open the dataset and examine the `geometry` variable. The `leaflet` function knows that the `geometry` variable contains this special information.
+
+```{r}
+nc %>% 
+  select(NAME, geometry) %>% 
+  slice(1:5)
+```
+
+To learn more about the data type `nc` into the Help menu or `?nc` into the console. 
+
+This plot puts the map with North Carolina county borders on top of the Open Street Map. This map isn't that interesting by itself. 
+```{r}
+leaflet(nc) %>% 
+  addTiles() %>% 
+  addPolygons()
+```
+
+Now, let's use some of the data to enhance the graph by creating a choropleth map where we color the counties by `sid_per_1000birth_79`. In `ggplot()`, we can map a variable to color or fill inside the aesthetic. But, in the leaflet functions, we can't do this. Instead, we need to create a variable of hex color names that tell it how to color or fill. Thankfully, there are functions that help us do that! Let's walk through the detail of how we created the graph below. 
+
+```{r choro}
+#creates a function that can be used to map a variable to
+#the color palette using viridis
+pal <- colorNumeric("viridis", 
+                     domain = nc$sid_per_1000birth_79) 
+
+leaflet(nc) %>% 
+  addTiles() %>% 
+  addPolygons(
+    fillColor = ~pal(sid_per_1000birth_79), #fills according to that variable
+    fillOpacity = 0.7) #like alpha in ggplot
+```
+
+The `colorNumeric()` function returns a function that maps a variable's values to colors in the given palette, in this case "viridis". So, `pal()` is a function. We can then use that function inside `addPolygons()`. If we apply the function to the `sid_per_1000birth_79` variable, it returns a variable of hex colors and the variable of colors is used to fill the counties. 
+
+Below I print out what happens when `pal()` is applied to `sid_per_1000birth_79`. We can see that it returns hex colors. So, the variable in the `fillColor` argument inside `addPolygons()` above, is a variable of hex color names.
+
+```{r}
+head(pal(nc$sid_per_1000birth_79))
+```
+
+Again, this is different from `ggplot()`, where we could map a variable to color or fill and it would do the translating of variable to color scale for us. In the `leaflet` functions, we have to explicitly provide the colors in a variable. The `colorNumeric()` help you do that. `colorBin()`, `colorQuantile()`, and `colorFactor()` are other functions you might need to use depending on the type of variable you are trying to change to colors.
+
+There are many customizeable options in `leaflet`, much like `ggplot()`. I have included a commented set of code below to point out some useful functions and arguments. 
+
+```{r}
+#creates a function that can be used to map a variable to
+#the color palette using viridis
+pal <- colorNumeric("viridis", 
+                     domain = nc$sid_per_1000birth_79) 
+
+leaflet(nc) %>% 
+  addTiles() %>% 
+  addPolygons(
+    #skips drawing the borders:
+    stroke = FALSE, 
+    #fills according to variable of hex colors:
+    fillColor = ~pal(sid_per_1000birth_79), 
+    #changes transparency, like alpha in ggplot
+    fillOpacity = 0.7, 
+    #how much to simplify the plot when zooming:
+    smoothFactor = 0.5, 
+    #changes what happens to the shape when we mouse over it
+    highlight = highlightOptions(weight = 5, 
+                                 color = "black",
+                                 fillOpacity = 0.9,
+                                 bringToFront = FALSE)) %>%
+  addCircles(data = nc_centroid,
+             lng = ~centr_long, 
+             lat =  ~centr_lat, 
+             # label that appears when you click on the marker,
+             # in this case county name and sid_per_1000birth_79
+             # rounded to the 2nd decimal
+             popup = ~paste(NAME,": ",
+                            round(sid_per_1000birth_79, 2),
+                            sep=""),
+             radius = 2) %>% 
+  
+  # Add a legend
+  addLegend(pal = pal, 
+            values = ~sid_per_1000birth_79, 
+            opacity = 0.5, 
+            title = NULL,
+            position = "bottomright") 
+```
+
+### Demo video
+
+COMING SOON!
 
 ### Resources
 
@@ -505,5 +627,27 @@ leaflet(data = favorite_stp_by_lisa) %>%
 
 * [Cheatsheet](https://ugoproto.github.io/ugo_r_doc/pdf/leaflet-cheat-sheet.pdf)
 
-* [Provider map previews](http://leaflet-extras.github.io/leaflet-providers/preview/)
+* [Provider map previews
+](http://leaflet-extras.github.io/leaflet-providers/preview/)
 
+### Cool maps
+
+[Hiking map with photos](http://archived.mhermans.net/hiking-gpx-r-leaflet.html)
+[NY Times mayoral primaries](http://www.nytimes.com/projects/elections/2013/nyc-primary/mayor/map.html)
+[flickr](https://www.flickr.com/map)
+[Super zip shiny app](http://shiny.rstudio.com/gallery/superzip-example.html)
+
+### Your turn!
+
+#### Exercise: A few of your favorite things
+
+In this exercise, you are going to create a single map of some of your favorite places! The end result will be one map. 
+
+a. Create a data set using the `tibble()` function that has 10-15 rows of your favorite places. The columns will be the name of the location, the latitude, the longitude, and a column that indicates if it is in your top 3 favorite locations or not. For an example of how to use `tibble()`, look at the `favorite_stp_by_lisa` I created in the data R code chunk at the beginning.  
+
+  b. Create a map that uses circles to indicate your favorite places. Label them with the name of the place. Choose the base map you like best. Color your 3 favorite places differently than the ones that are not in your top 3. Add a legend that explains what the colors mean.  
+  
+  c. Connect all your locations together with a line in a meaningful way (you may need to order them differently in the original data).  
+  
+  d. If there are other variables you want to add that could enhance your plot, do that now.  
+  
