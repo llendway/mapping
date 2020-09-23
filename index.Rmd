@@ -91,6 +91,20 @@ After this tutorial, you should be able to do the following:
 
 * Understand the basics of creating a map using `leaflet`, including adding points and choropleths to a base map.
 
+##  Motivation
+
+Take a look at these to get motivated/inspired to make your own:
+
+[NYT article](https://www.nytimes.com/interactive/2020/08/24/climate/racism-redlining-cities-global-warming.html?fbclid=IwAR1iX20gZcHt-HERYeJs0t2fjSXRJh2aBYYSfSkpc50dBvfByBCWezTSXbw) on effects of redlining
+
+[Hiking map with photos](http://archived.mhermans.net/hiking-gpx-r-leaflet.html)
+
+[NY Times mayoral primaries](http://www.nytimes.com/projects/elections/2013/nyc-primary/mayor/map.html)
+
+[flickr](https://www.flickr.com/map)
+
+[Super zip shiny app](http://shiny.rstudio.com/gallery/superzip-example.html)
+
 
 ## Plotting points on a map
 
@@ -529,7 +543,10 @@ leaflet(data = favorite_stp_by_lisa) %>%
 
 #### Choropleth layers with `addPolygons()`
 
+For making maps with borders (like choropleth maps), the functions can receive the base maps with spatial data a few different ways. In the example here, I use functions from the `sf` package to get the data in the right form. In the demo video, I will translate a data.frame to an `sf` object. Hopefully those two sets of instructions fit most of the cases you are interested in.
+
 In the data code chunk at the beginning, the function `st_read()` downloads the shape file for the counties of North Carolina, which is included in the `sf` package. 
+
 The dataset has number of births and number of SIDS cases in each county of North Carolina from 1974-1979 and 1979-1984. I computed a variable called `sid_per_1000birth_79` which is the number of sids cases per 1000 births in 1979. 
 
 Below, I printed out the first 5 rows of the data with the NAMES and geometry variables from the dataset. The `geometry` variable contains information about how to plot the boundaries of the counties. Open the dataset and examine the `geometry` variable. The `leaflet` function knows that the `geometry` variable contains this special information.
@@ -619,7 +636,34 @@ leaflet(nc) %>%
 
 ### Demo video
 
-COMING SOON!
+Watch my demo video below, but also check out the [video](https://learn.r-journalism.com/en/mapping/census_maps/census-maps/) by Andrew Ba Tran of the Washington Post (also listed in the Resources section below).
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/U07OQ3V-W2k" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+[Voicethread: leaflet demo](https://voicethread.com/share/15540203/)
+
+```{r, echo=FALSE}
+download_file(
+  path = "04_leaflet_demo_no_code.Rmd",
+  button_label = "Download leaflet demo file (without code)",
+  button_type = "warning",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
+
+```{r, echo=FALSE}
+download_file(
+  path = "04_leaflet_demo.Rmd",
+  button_label = "Download leaflet demo file (with code)",
+  button_type = "info",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
+
 
 ### Resources
 
@@ -627,15 +671,9 @@ COMING SOON!
 
 * [Cheatsheet](https://ugoproto.github.io/ugo_r_doc/pdf/leaflet-cheat-sheet.pdf)
 
-* [Provider map previews
-](http://leaflet-extras.github.io/leaflet-providers/preview/)
+* [Provider map previews](http://leaflet-extras.github.io/leaflet-providers/preview/)
 
-### Cool maps
-
-[Hiking map with photos](http://archived.mhermans.net/hiking-gpx-r-leaflet.html)
-[NY Times mayoral primaries](http://www.nytimes.com/projects/elections/2013/nyc-primary/mayor/map.html)
-[flickr](https://www.flickr.com/map)
-[Super zip shiny app](http://shiny.rstudio.com/gallery/superzip-example.html)
+* [Tutorial](https://learn.r-journalism.com/en/mapping/census_maps/census-maps/) by Andrew Ba Tran, investigative data reporter at Washington Post
 
 ### Your turn!
 

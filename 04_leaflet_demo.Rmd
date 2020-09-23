@@ -1,0 +1,186 @@
+---
+title: "Mapping data in R: `leaflet` demo"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    code_download: true
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r libraries}
+library(tidyverse)     # for data cleaning and plotting
+library(googlesheets4) # for reading googlesheet data
+library(lubridate)     # for date manipulation
+library(openintro)     # for the abbr2state() function
+library(palmerpenguins)# for Palmer penguin data
+library(maps)          # for map data
+library(gplots)        # for col2hex() function
+library(ggmap)         # for mapping points on maps
+library(RColorBrewer)  # for color palettes
+library(sf)            # for working with spatial data
+library(leaflet)       # for highly customizable mapping
+library(ggthemes)      # for more themes (including theme_map())
+gs4_deauth()           # To not have to authorize each time you knit.
+theme_set(theme_minimal())
+```
+
+```{r data}
+# Lisa's Mallorca cycling data
+mallorca_bike_day7 <- read_csv("https://www.dropbox.com/s/zc6jan4ltmjtvy0/mallorca_bike_day7.csv?dl=1") %>% 
+  select(1:4, speed)
+
+county_mn <- map_data("county") %>% 
+  # filter to MN
+  filter(region == "minnesota") %>% 
+  # region is currently the state, so drop that
+  select(-region) %>% 
+  # rename subregion, region because it will look for that variable
+  rename(region = subregion)
+
+# MN county populations
+mn_county_pop <- read_csv("https://raw.githubusercontent.com/llendway/mapping/master/data/mn_county_population.csv") %>% 
+  # get the county name to match the one from the county_mn file
+  # Use separate() to remove "County" at the end of each county name
+  separate(county,
+           sep = -7:-1,
+           into = c("county", "extra")) %>% 
+  # Drop that variable 
+  select(-extra) %>% 
+  # Make counties lower case without any periods
+  mutate(county = str_remove(str_to_lower(county), "\\."))
+
+
+# COVID 19 data from NYT joined with data above to create MN county-level covid dataset
+mn_covid_county <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
+  # Filter to MN
+  filter(state == "Minnesota") %>% 
+  # Keep data from most recent date
+  group_by(county, fips) %>% 
+  top_n(n = 1, wt = date) %>% 
+  # Make counties lower case without any periods
+  mutate(county = str_remove(str_to_lower(county), "\\.")) %>% 
+  # Join with the county population data
+  left_join(mn_county_pop,
+            by = "county")
+```
+
+This video will show examples of making maps using `leaflet`. I will replicate the plots I created in the demo videos for `ggmap` and `geom_map()`
+
+# Plotting points/markers with `leaflet`
+
+In this part, we will replicate the map of my bike ride in Mallorca. I have already read in the data above. Let's take a look at `mallorca_bike_day7` to remind ourselves what it looks like.
+
+Let's also remember the steps for making a map using `leaflet`:
+
+1. Create a map widget by calling `leaflet()` and telling it the data to use.  
+2. Add a base map using `addTiles()` (the default) or `addProviderTiles()`.
+3. Add layers to the map by using layer functions (e.g. , `addMarkers()`, `addPolygons()`) to modify the map widget.   
+4. Repeat step 3 as desired.  
+5. Print the map widget to display it.
+
+## Bare-bones map
+
+Start by just plotting the points (there's a lot of them!). My variable name are not correct although it seems to guess them correclty. Probably better to explicitly name them.
+
+```{r}
+leaflet(mallorca_bike_day7) %>% 
+  addTiles() %>% 
+  addMarkers()
+```
+
+## Modify the map
+
+* Change the base map - check out providers preview [here](http://leaflet-extras.github.io/leaflet-providers/preview/.
+
+* Use  `addCircles()` instead of `addMarkers()`.
+
+* Change marker size with `radius`
+
+* Change marker color to color by elevation. This part is tricky because we cannot just map a variable to color. Instead we need to create a variable of colors using the `colorNumeric()` function (show in help).
+
+* Add label of speed (a variable - what do I need?)
+
+
+```{r}
+# create the function to map a variable to color
+pal <- colorNumeric("magma",
+                    domain = mallorca_bike_day7$ele)
+
+leaflet(mallorca_bike_day7) %>% 
+  addProviderTiles(providers$Esri.WorldImagery) %>% 
+  addCircles(lng = ~lon,
+             lat = ~lat,
+             color = ~pal(ele),
+             label = ~round(speed,1)) %>% 
+  addLegend("topleft",
+            pal = pal,
+            values = ~ele)
+```
+
+
+# Choropleth map with `leaflet`
+
+In this exercise we will replicate the graph we made that colors MN counties by the number of COVID cases per 10,000 residents.
+
+First, we need to translate the `county_mn` data to an `sf` object. This took me a while to figure out. The final solution was mostly from [here](https://stackoverflow.com/questions/61215968/creating-sf-polygons-from-a-dataframe). We also join on the COVID and population data. 
+
+```{r}
+mn_covid_all <- 
+  # convert data.frame to sf object
+  county_mn %>%
+  st_as_sf(coords = c("long", "lat"), crs = "NAD27") %>%
+  group_by(region) %>% 
+  summarise(geometry = st_combine(geometry)) %>%
+  st_cast("POLYGON") %>% 
+  # add the covid & population data
+  left_join(mn_covid_county,
+            by = c("region"="county")) %>% 
+  mutate(cases_per_10000 = cases/population*10000)
+```
+
+Next, create a map of the counties. Add a label with the county name (use `str_to_title()` so it looks nice.)
+
+```{r}
+leaflet(mn_covid_all) %>% 
+  addTiles() %>% 
+  addPolygons(label = ~str_to_title(region))
+```
+
+Let's add some modifications:
+
+* fill by cases_per_10000  
+* don't outline the counties (`stroke = FALSE`)  
+* change `fillOpacity`  
+* change label to have county name and cases_per_10000
+* change what happens when you mouse over (`highlightOptions()`)  
+* add a legend  
+
+```{r}
+pal2 <- colorNumeric("inferno", 
+                     domain = mn_covid_all$cases_per_10000)
+
+leaflet(mn_covid_all) %>% 
+  addTiles() %>% 
+  addPolygons(fillColor = ~pal2(cases_per_10000),
+              stroke = FALSE,
+              fillOpacity = .7,
+              label = ~paste(str_to_title(region),
+                                ":",
+                                round(cases_per_10000,0),
+                                .sep = ""),
+              highlight = highlightOptions( 
+                                 color = "black",
+                                 fillOpacity = 0.9,
+                                 bringToFront = FALSE)) %>% 
+  addLegend(position = "bottomright",
+            pal = pal2, 
+            values = ~cases_per_10000,
+            title = "Cases per 10,000")
+```
+
+
